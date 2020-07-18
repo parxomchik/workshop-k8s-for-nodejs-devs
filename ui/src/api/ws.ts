@@ -5,7 +5,7 @@ import { saveCurrentUser, loadCurrentUser } from './local-storage';
 let socket: SocketIOClient.Socket;
 
 export function getSocket(): SocketIOClient.Socket {
-  socket = io(':3001', { query: loadCurrentUser(), transports: ['websocket'] });
+  socket = io({ query: loadCurrentUser(), transports: ['websocket'] });
   return socket;
 }
 
