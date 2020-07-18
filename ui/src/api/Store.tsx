@@ -15,6 +15,7 @@ const Store: FunctionComponent<{}> = (props) => {
   const [partner, setPartner] = useState<User | undefined>();
 
   useEffect(() => {
+    if (connected) return;
     getSocket()
       .on('connect', () => setConnectionStatus(true))
       .on('disconnect', () => setConnectionStatus(false))
@@ -24,7 +25,7 @@ const Store: FunctionComponent<{}> = (props) => {
       .on(EventTypes.USER_LOGOUT, (user: User) => userEvent({ type: EventTypes.USER_LOGOUT, user }))
       .on(EventTypes.USERS_LIST, (users: User[]) => userEvent({ type: EventTypes.USERS_LIST, users }))
       .on(EventTypes.RECEIVE_MESSAGE, newMessageReceived);
-  }, []);
+  }, [connected]);
 
   return (
     <ctx.Provider

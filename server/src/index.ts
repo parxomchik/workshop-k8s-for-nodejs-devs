@@ -1,42 +1,22 @@
-import http from 'http';
-import { parse } from 'url';
-import express from 'express';
-import io from 'socket.io';
-import { EventTypes, MessageRequest, Message, User } from './enums';
+import './setup';
+import * as http from './http-server';
 
-const app = express();
-app.get('/', (req, res) => res.send('Hello World!'));
+let isShutdownStarted = false;
 
-const httpServer = http.createServer(app);
-const server: io.Server = io(httpServer);
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
+  if (isShutdownStarted) return;
+  isShutdownStarted = true;
+  console.log(`Received ${signal}. Shutdown started`);
+  await http.close();
+  console.log('Server stopped');
+}
 
-const users = new Map<string, User>();
+const signals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGHUP'];
+for (const signal of signals) {
+  process.on(signal, shutdown);
+}
 
-server.on('connection', function (socket: SocketIO.Socket) {
-  const { uuid, name } = parse(socket.request.url, true).query;
-  if (!uuid || Array.isArray(uuid) || !name || Array.isArray(name)) return socket.disconnect(true);
-
-  const user = { uuid, name: name };
-  users.set(user.uuid, user);
-
-  socket.join(user.uuid).broadcast.emit(EventTypes.USER_LOGGED_IN, user);
-  server.to(user.uuid).emit(EventTypes.USERS_LIST, Array.from(users.values()));
-
-  socket.on('disconnect', () => {
-    server.emit(EventTypes.USER_LOGOUT, user);
-    users.delete(user.uuid);
-  });
-
-  socket.on(EventTypes.USER_CHANGING_NAME, function (renamedUser: User) {
-    user.name = renamedUser.name;
-    server.emit(EventTypes.USER_CHANGED_NAME, user);
-  });
-
-  socket.on(EventTypes.SEND_MESSAGE, function (messageRequest: MessageRequest) {
-    const message: Message = { from: user.uuid, ...messageRequest };
-    server.to(messageRequest.to).emit(EventTypes.RECEIVE_MESSAGE, message);
-    server.to(user.uuid).emit(EventTypes.RECEIVE_MESSAGE, message);
-  });
-});
-
-httpServer.listen(3001, () => console.log(`Server started`));
+(async function bootstrap(): Promise<void> {
+  await http.listen();
+  console.log('Server started');
+})();
