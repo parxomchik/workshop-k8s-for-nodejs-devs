@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  ui:
+    container_name: ui
+    build: ./ui
+    image: galkin/k8s-ui
+    ports:
+      - 3000:80
+
+  server:
+    container_name: server
+    build: ./server
+    image: galkin/k8s-server
+    ports:
+      - 3001:3001
