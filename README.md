@@ -1,6 +1,6 @@
 # K8S Workshop for Node.js Developers
 
-co## Step 3.1 Run Application at K8s
+## Step 3.1 Run Application at K8s
 
 ```
 minikube start
